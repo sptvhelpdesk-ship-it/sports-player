@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Referrer Policy: এটা দিলে সার্ভার বুঝবে না রিকোয়েস্ট কোথা থেকে যাচ্ছে (খুবই জরুরি) -->
+    <meta name="referrer" content="no-referrer"> 
+    <title>Live Sports Player</title>
+
+    <!-- Shaka Player CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css">
+    
+    <!-- Shaka Player JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden; /* স্ক্রল বার বন্ধ করার জন্য */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* ফুল স্ক্রিন প্লেয়ার স্টাইল */
+        .video-container {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* ভিডিও সাইজ ঠিক রাখার জন্য */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="video-container" id="video-container">
+        <video id="video" autoplay playsinline></video>
+    </div>
+
+    <script>
+        async function init() {
+            // Shaka Player সাপোর্ট চেক
+            shaka.polyfill.installAll();
+            if (!shaka.Player.isBrowserSupported()) {
+                alert('Browser not supported!');
+                return;
+            }
+
+            const video = document.getElementById('video');
+            const container = document.getElementById('video-container');
+
+            const player = new shaka.Player(video);
+            const ui = new shaka.ui.Overlay(player, container, video);
+
+            // ৩-ডট মেনুতে Quality বাটন আনার জন্য
+            ui.configure({
+                overflowMenuButtons: ['quality', 'playback_rate', 'picture_in_picture', 'cast']
+            });
+
+            // এরর হ্যান্ডেলিং
+            player.addEventListener('error', (event) => {
+                console.error('Error code', event.detail.code, 'object', event.detail);
+            });
+
+            // কনফিগারেশন (হুবহু ওই লিংকের মতো)
+            player.configure({
+                streaming: {
+                    bufferingGoal: 15, // একটু বাড়িয়ে দিলাম যাতে বাফারিং কম হয়
+                    rebufferingGoal: 2,
+                    startAtSegmentBoundary: true,
+                    lowLatencyMode: true
+                },
+                drm: {
+                    clearKeys: {
+                        '1779c27b9d077a3ba0c9cc1bb9a94b9f': 'cc5cf3b7928fb9e0a1ee6a8b566f0a8e'
+                    }
+                }
+            });
+
+            // ভিডিও ইউআরএল
+            const streamUrl = 'https://a201aivottlinear-a.akamaihd.net/OTTB/lhr-nitro/clients/dash/enc/f60kqesunw/out/v1/a435ed7a00f947deb4369b46d8f2fb70/cenc.mpd';
+
+            try {
+                await player.load(streamUrl);
+                console.log('The video has now been loaded!');
+            } catch (e) {
+                console.error('Error loading video:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+
+</body>
+</html>
